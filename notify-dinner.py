@@ -1,28 +1,28 @@
 # -*- coding: utf-8 -*-
 import sys
-import urllib2
 import time
 import json
-# resolve chinese character encoding problem
-reload(sys)
-sys.setdefaultencoding('utf8')
+import urllib.request
+from functools import reduce
 # common
 from fisheye import notify
 
-
+"""
+todo: when clicking notification, open new_dishes file
+"""
 class autoBooker():
 
     def __init__(self):
-        self.path = sys.path[0]
+        self.path = sys.path[0]  # time.strftime("%Y-%m-%d", time.localtime())
         self.url_menu = 'http://www.chuiyanxiaochu.com/action/get_dish_list?'\
-                        'day=%s&type=2&stype=2&_=%d' % (time.strftime("%Y-%m-%d", time.localtime()),
-                                                        time.time())
+                        'day=%s&type=2&stype=2&_=%d' % (
+                            '2015-10-26', time.time())
 
     # download data
     def fetch(self):
-        f = urllib2.urlopen(url=self.url_menu, timeout=10)
-        d = f.read()
-        d = json.loads(d)['data']['list']
+        f = urllib.request.urlopen(url=self.url_menu, timeout=10)
+        d = f.read().decode()
+        d = json.loads(d)['data']['list']  # ['data']['list']
         return map(lambda x: x['name'], d)
 
     # eliminate non-chinese characters
@@ -51,6 +51,10 @@ class autoBooker():
         for m in menu:
             if m not in pref:
                 new_dishes.append(m)
+        if new_dishes:
+            f = open(self.path + '/data/new_dishes.txt', 'w')
+            f.write('\n'.join(new_dishes))
+            f.close()
         return new_dishes
 
     # start from the top of my preference list, find the first one that occurs
@@ -68,11 +72,10 @@ class autoBooker():
     # main function
     def run(self):
         menu = self.getTodaysMenu()
-        print menu
         pref = self.getMyPreference()
-        print pref
         new_dishes = self.findNewDishes(pref, menu)
-        msg = 'New dishes: ' + new_dishes if new_dishes else "Nothing new"
+        msg = 'New dishes: ' + \
+            ','.join(new_dishes) if new_dishes else "Nothing new"
         target = self.decide(pref, menu)
         if not target:
             title = 'Nothing has been ordered'
