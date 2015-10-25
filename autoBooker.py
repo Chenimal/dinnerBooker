@@ -8,9 +8,8 @@ from functools import reduce
 import fisheye
 
 """
-todo:
-1. add log
-2. handle error
+Author: Chen Sun
+Date: 10-25-2015
 """
 
 
@@ -51,8 +50,8 @@ class autoBooker():
         f = open(self.pref_data, 'a+')
         f.seek(0, 0)
         res = f.readlines()
-        res = map(lambda x: x.strip(), res)
-        res = list(filter(lambda x:  x[0] != '#', res))
+        res = list(map(lambda x: x.strip(), res))
+        res = list(filter(lambda x:  x and x[0] != '#', res))
         f.close()
         return res
 
@@ -95,24 +94,28 @@ class autoBooker():
 
     # main function
     def run(self):
-        menu = self.getTodaysMenu()
-        pref = self.getMyPreference()
-        new_dishes = self.findNewDishes(pref, menu)
-        msg = 'New dishes: ' + \
-            ','.join(new_dishes) if new_dishes else "Nothing new"
-        target = self.decide(pref, menu)
-        if not target:
-            title = 'Nothing has been ordered'
-        else:
-            res = self.makeOrder(target[0])
-            if res['rtn'] == 0:
-                title = 'Ordered ' + target[1]
+        try:
+            menu = self.getTodaysMenu()
+            pref = self.getMyPreference()
+            new_dishes = self.findNewDishes(pref, menu)
+            msg = 'New dishes: ' + \
+                ','.join(new_dishes) if new_dishes else "Nothing new"
+            target = self.decide(pref, menu)
+            if not target:
+                title = 'Nothing has been ordered'
             else:
-                title = res['data']['msg']
-        fisheye.notify(title=title, message=msg, group='dinner',
-                       execute='/usr/local/bin/subl ' + self.pref_data)
-        fisheye.logger(self.__class__.__name__, time.strftime(
-            '%Y-%m-%d %H:%M:%S\t') + title + '\t' + msg)
+                res = self.makeOrder(target[0])
+                if res['rtn'] == 0:
+                    title = 'Ordered ' + target[1]
+                else:
+                    title = res['data']['msg']
+            fisheye.notify(title=title, message=msg, group='dinner',
+                           execute='/usr/local/bin/subl ' + self.pref_data)
+            fisheye.logger(self.__class__.__name__, time.strftime(
+                '%Y-%m-%d %H:%M:%S\t') + title + '\t' + msg)
+        except Exception as e:
+            fisheye.logger(self.__class__.__name__, time.strftime(
+                '%Y-%m-%d %H:%M:%S\t') + '[error] ' + str(e))
 
 
 a = autoBooker()
