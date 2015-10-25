@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 import time
 import json
@@ -8,12 +7,17 @@ from functools import reduce
 from fisheye import notify
 
 """
-todo: when clicking notification, open new_dishes file
+todo:
+1. add log
+2. makeOrder()
 """
+
+
 class autoBooker():
 
     def __init__(self):
         self.path = sys.path[0]  # time.strftime("%Y-%m-%d", time.localtime())
+        self.pref_data = self.path + '/data/preference.txt'
         self.url_menu = 'http://www.chuiyanxiaochu.com/action/get_dish_list?'\
                         'day=%s&type=2&stype=2&_=%d' % (
                             '2015-10-26', time.time())
@@ -23,7 +27,7 @@ class autoBooker():
         f = urllib.request.urlopen(url=self.url_menu, timeout=10)
         d = f.read().decode()
         d = json.loads(d)['data']['list']  # ['data']['list']
-        return map(lambda x: x['name'], d)
+        return list(map(lambda x: x['name'], d))
 
     # eliminate non-chinese characters
     def parse(self, str):
@@ -35,13 +39,16 @@ class autoBooker():
 
     def getTodaysMenu(self):
         menu_today = self.fetch()
-        menu_today = map(self.parse, menu_today)
+        menu_today = list(map(self.parse, menu_today))
         return menu_today
 
     # existing dish list. The order indicates preference
     def getMyPreference(self):
-        f = open(self.path + '/data/preference.txt', 'w+')
+        f = open(self.pref_data, 'a+')
+        f.seek(0, 0)
         res = f.readlines()
+        res = map(lambda x: x.strip(), res)
+        res = list(filter(lambda x:  x[0] != '#', res))
         f.close()
         return res
 
@@ -52,8 +59,15 @@ class autoBooker():
             if m not in pref:
                 new_dishes.append(m)
         if new_dishes:
-            f = open(self.path + '/data/new_dishes.txt', 'w')
-            f.write('\n'.join(new_dishes))
+            f = open(self.pref_data, 'a+')
+            f.seek(0, 0)
+            res = f.readlines()
+            # do not add it, if the new dish exists in pref list already
+            res = list(filter(lambda x:  x[0] == '#', res))
+            for n in new_dishes:
+                n = '# ' + n + '\n'
+                if n not in res:
+                    f.write(n)
             f.close()
         return new_dishes
 
@@ -67,12 +81,13 @@ class autoBooker():
 
     # send order request
     def makeOrder(self, dishid):
-        pass
+        return True
 
     # main function
     def run(self):
         menu = self.getTodaysMenu()
         pref = self.getMyPreference()
+        print(menu)
         new_dishes = self.findNewDishes(pref, menu)
         msg = 'New dishes: ' + \
             ','.join(new_dishes) if new_dishes else "Nothing new"
@@ -82,7 +97,8 @@ class autoBooker():
         else:
             res = self.makeOrder(target)
             title = 'You ordered ' + target if res else 'Order failed'
-        notify(title=title, message=msg)
+        notify(title=title, message=msg, group='dinner',
+               execute='/usr/local/bin/subl ' + self.pref_data)
 
 
 a = autoBooker()

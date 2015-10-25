@@ -6,9 +6,11 @@ import os
 # notify function
 
 
-def notify(title='', subtitle='', message='', url=''):
+def notify(title='', message='', url='', group='', execute=''):
     t = '-title {!r}'.format(title)
-    s = '-subtitle {!r}'.format(subtitle)
     m = '-message {!r}'.format(message)
     u = '-open {!r}'.format(url)
-    os.system('/usr/local/bin/terminal-notifier {}'.format(' '.join([m, t, s, u])))
+    g = '-group {!r}'.format(group)
+    e = '-execute {!r}'.format(execute)
+    os.system(
+        '/usr/local/bin/terminal-notifier {}'.format(' '.join([m, t, u, g, e])))
