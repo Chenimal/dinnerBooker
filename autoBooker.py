@@ -5,12 +5,12 @@ import urllib.request
 import urllib.parse
 from functools import reduce
 # common
-from fisheye import notify
+import fisheye
 
 """
 todo:
 1. add log
-2. makeOrder()
+2. handle error
 """
 
 
@@ -37,11 +37,7 @@ class autoBooker():
 
     # eliminate non-chinese characters
     def parse(self, str):
-        return reduce(lambda x, y: x + y if self.isChinese(y) else x, str, '')
-
-    # if unicode char is chinese
-    def isChinese(self, uchar):
-        return True if uchar >= u'\u4e00' and uchar <= u'\u9fa5' else False
+        return reduce(lambda x, y: x + y if fisheye.isChinese(y) else x, str, '')
 
     def getTodaysMenu(self):
         menu_today = self.fetch()
@@ -113,8 +109,10 @@ class autoBooker():
                 title = 'Ordered ' + target[1]
             else:
                 title = res['data']['msg']
-        notify(title=title, message=msg, group='dinner',
-               execute='/usr/local/bin/subl ' + self.pref_data)
+        fisheye.notify(title=title, message=msg, group='dinner',
+                       execute='/usr/local/bin/subl ' + self.pref_data)
+        fisheye.logger(self.__class__.__name__, time.strftime(
+            '%Y-%m-%d %H:%M:%S\t') + title + '\t' + msg)
 
 
 a = autoBooker()
