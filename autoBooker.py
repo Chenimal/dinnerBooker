@@ -1,7 +1,7 @@
-#-*- coding:utf-8 -*-
 import sys
 import time
 import json
+import re
 import urllib.request
 import urllib.parse
 from functools import reduce
@@ -16,18 +16,28 @@ Date: 10-25-2015
 
 class autoBooker():
 
-    def __init__(self):
+    def __init__(self, name=''):
         self.path = sys.path[0]
         self.pref_path = self.path + '/data/preference.txt'
         self.pref_data = self.loadPrefData()
-        self.url_menu = 'http://www.chuiyanxiaochu.com/action/get_dish_list?'\
+        self.url_base = 'http://www.chuiyanxiaochu.com'
+        self.url_menu = self.url_base+'/action/get_dish_list?'\
                         'day=%s&type=2&stype=2&_=%d' % (
                             time.strftime("%Y-%m-%d", time.localtime()), time.time())
+        self.url_token = self.url_base+'/team/menu/928fb88d95f71bee5fe6ad1a953831bc'
         self.url_order = {
-            'url': 'http://www.chuiyanxiaochu.com/action/team_mem_add_order',
-            'data': {'name': '孙晨',
+            'url': self.url_base+'/action/team_mem_add_order',
+            'data': {'name': name,
                      'teamId': 1000006,
-                     'token': 'e254855def8e14e365be656c458f006b'}}
+                     'token': ''}}
+
+    # get token
+    def getToken(self):
+        f = urllib.request.urlopen(url=self.url_token, timeout=10)
+        d = f.read().decode()
+        p = re.compile(r'var token = \'(.*?)\'')
+        m = p.findall(d)
+        self.url_order['data']['token'] = m[0]
 
     # get pref data
     def loadPrefData(self):
@@ -100,6 +110,7 @@ class autoBooker():
     # main function
     def run(self):
         try:
+            self.getToken()
             menu = self.getTodaysMenu()
             pref = self.getMyPreference()
             new_dishes = self.findNewDishes(pref, menu)
@@ -123,5 +134,5 @@ class autoBooker():
                 '%Y-%m-%d %H:%M:%S\t') + '[error] ' + str(e))
 
 
-a = autoBooker()
+a = autoBooker('孙晨')
 a.run()
