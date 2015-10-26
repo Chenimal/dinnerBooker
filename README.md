@@ -12,3 +12,6 @@ Book dinner at www.chuiyanxiaochu.com for Chen. Writen in Python 3.x
 - Which dish is booked
 - New dishes in todays menu when they are not in preference list
 - Error message if failed
+
+### Note
+To make it work in crontab, remember to add ```export LANG="en_US.UTF-8";``` in front of command
