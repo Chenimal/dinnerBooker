@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 import sys
 import time
 import json
@@ -16,16 +17,26 @@ Date: 10-25-2015
 class autoBooker():
 
     def __init__(self):
-        self.path = sys.path[0]  # time.strftime("%Y-%m-%d", time.localtime())
-        self.pref_data = self.path + '/data/preference.txt'
+        self.path = sys.path[0]
+        self.pref_path = self.path + '/data/preference.txt'
+        self.pref_data = self.loadPrefData()
         self.url_menu = 'http://www.chuiyanxiaochu.com/action/get_dish_list?'\
                         'day=%s&type=2&stype=2&_=%d' % (
-                            '2015-10-26', time.time())
+                            time.strftime("%Y-%m-%d", time.localtime()), time.time())
         self.url_order = {
             'url': 'http://www.chuiyanxiaochu.com/action/team_mem_add_order',
             'data': {'name': '孙晨',
                      'teamId': 1000006,
                      'token': 'e254855def8e14e365be656c458f006b'}}
+
+    # get pref data
+    def loadPrefData(self):
+        f = open(self.pref_path, 'a+')
+        f.close()
+        f = open(self.pref_path, 'r')
+        res = f.readlines()
+        f.close()
+        return res
 
     # download data
     def fetch(self):
@@ -47,12 +58,8 @@ class autoBooker():
 
     # existing dish list. The order indicates preference
     def getMyPreference(self):
-        f = open(self.pref_data, 'a+')
-        f.seek(0, 0)
-        res = f.readlines()
-        res = list(map(lambda x: x.strip(), res))
+        res = list(map(lambda x: x.strip(), self.pref_data))
         res = list(filter(lambda x:  x and x[0] != '#', res))
-        f.close()
         return res
 
     # items in menu but not in pref
@@ -62,11 +69,9 @@ class autoBooker():
             if m[1] not in pref:
                 new_dishes.append(m[1])
         if new_dishes:
-            f = open(self.pref_data, 'a+')
-            f.seek(0, 0)
-            res = f.readlines()
             # do not add it, if the new dish exists in pref list already
-            res = list(filter(lambda x:  x[0] == '#', res))
+            res = list(filter(lambda x:  x[0] == '#', self.pref_data))
+            f = open(self.pref_path, 'a')
             for n in new_dishes:
                 n = '# ' + n + '\n'
                 if n not in res:
@@ -110,7 +115,7 @@ class autoBooker():
                 else:
                     title = res['data']['msg']
             fisheye.notify(title=title, message=msg, group='dinner',
-                           execute='/usr/local/bin/subl ' + self.pref_data)
+                           execute='/usr/local/bin/subl ' + self.pref_path)
             fisheye.logger(self.__class__.__name__, time.strftime(
                 '%Y-%m-%d %H:%M:%S\t') + title + '\t' + msg)
         except Exception as e:
