@@ -6,7 +6,7 @@ import urllib.request
 import urllib.parse
 from functools import reduce
 # common
-import fisheye
+import lib.functions
 
 """
 Author: Chen Sun
@@ -16,18 +16,19 @@ Date: 10-25-2015
 
 class autoBooker():
 
-    def __init__(self, name=''):
+    def __init__(self):
         self.path = sys.path[0]
         self.pref_path = self.path + '/data/preference.txt'
         self.pref_data = self.loadPrefData()
         self.url_base = 'http://www.chuiyanxiaochu.com'
-        self.url_menu = self.url_base+'/action/get_dish_list?'\
-                        'day=%s&type=2&stype=2&_=%d' % (
-                            time.strftime("%Y-%m-%d", time.localtime()), time.time())
-        self.url_token = self.url_base+'/team/menu/928fb88d95f71bee5fe6ad1a953831bc'
+        self.url_menu = self.url_base + '/action/get_dish_list?'\
+            'day=%s&type=2&stype=2&_=%d' % (
+                time.strftime("%Y-%m-%d", time.localtime()), time.time())
+        self.url_token = self.url_base + \
+            '/team/menu/928fb88d95f71bee5fe6ad1a953831bc'
         self.url_order = {
-            'url': self.url_base+'/action/team_mem_add_order',
-            'data': {'name': name,
+            'url': self.url_base + '/action/team_mem_add_order',
+            'data': {'name': '',
                      'teamId': 1000006,
                      'token': ''}}
 
@@ -57,7 +58,7 @@ class autoBooker():
 
     # eliminate non-chinese characters
     def parse(self, str):
-        return reduce(lambda x, y: x + y if fisheye.isChinese(y) else x, str, '')
+        return reduce(lambda x, y: x + y if lib.functions.isChinese(y) else x, str, '')
 
     def getTodaysMenu(self):
         menu_today = self.fetch()
@@ -108,9 +109,10 @@ class autoBooker():
         return res
 
     # main function
-    def run(self):
+    def run(self, name):
         try:
             self.getToken()
+            self.url_order['data']['name'] = name
             menu = self.getTodaysMenu()
             pref = self.getMyPreference()
             new_dishes = self.findNewDishes(pref, menu)
@@ -125,14 +127,14 @@ class autoBooker():
                     title = 'Ordered ' + target[1]
                 else:
                     title = res['data']['msg']
-            fisheye.notify(title=title, message=msg, group='dinner',
-                           execute='/usr/local/bin/subl ' + self.pref_path)
-            fisheye.logger(self.__class__.__name__, time.strftime(
+            lib.functions.notify(title=title, message=msg, group='dinner',
+                                 execute='/usr/local/bin/subl ' + self.pref_path)
+            lib.functions.logger(self.__class__.__name__, time.strftime(
                 '%Y-%m-%d %H:%M:%S\t') + title + '\t' + msg)
         except Exception as e:
-            fisheye.logger(self.__class__.__name__, time.strftime(
+            lib.functions.logger(self.__class__.__name__, time.strftime(
                 '%Y-%m-%d %H:%M:%S\t') + '[error] ' + str(e))
 
 
-a = autoBooker('孙晨')
-a.run()
+a = autoBooker()
+a.run('孙晨')
