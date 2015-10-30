@@ -10,7 +10,9 @@ import lib.functions
 
 """
 Author: Chen Sun
-Date: 10-25-2015
+Since: 10.25.2015
+Todo:
+1. Show ordered dish in notification
 """
 
 
@@ -42,9 +44,8 @@ class autoBooker():
 
     # get pref data
     def loadPrefData(self):
-        f = open(self.pref_path, 'a+')
-        f.close()
-        f = open(self.pref_path, 'r')
+        f = open(self.pref_path, 'a+', encoding='utf-8')
+        f.seek(0, 0)
         res = f.readlines()
         f.close()
         return res
